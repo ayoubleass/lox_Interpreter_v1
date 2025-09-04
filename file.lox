@@ -1,0 +1,7 @@
+var name = ayoub;
+
+//this function print the name
+
+fun printName () {
+    print name;    
+}
