@@ -1,154 +1,123 @@
 const { EOF } = require("dns");
 const fs = require('fs');
 const readline = require('readline');
-
-const tokenType = Object.freeze({
-  // Single-character tokens
-  LEFT_PAREN: 'LEFT_PAREN',
-  RIGHT_PAREN: 'RIGHT_PAREN',
-  LEFT_BRACE: 'LEFT_BRACE',
-  RIGHT_BRACE: 'RIGHT_BRACE',
-  COMMA: 'COMMA',
-  DOT: 'DOT',
-  MINUS: 'MINUS',
-  PLUS: 'PLUS',
-  SEMICOLON: 'SEMICOLON',
-  SLASH: 'SLASH',
-  STAR: 'STAR',
-
-  // One or two character tokens
-  BANG: 'BANG',
-  BANG_EQUAL: 'BANG_EQUAL',
-  EQUAL: 'EQUAL',
-  EQUAL_EQUAL: 'EQUAL_EQUAL',
-  GREATER: 'GREATER',
-  GREATER_EQUAL: 'GREATER_EQUAL',
-  LESS: 'LESS',
-  LESS_EQUAL: 'LESS_EQUAL',
-
-  // Literals
-  IDENTIFIER: 'IDENTIFIER',
-  STRING: 'STRING',
-  NUMBER: 'NUMBER',
-
-  // Keywords
-  AND: 'AND',
-  CLASS: 'CLASS',
-  ELSE: 'ELSE',
-  FALSE: 'FALSE',
-  FUN: 'FUN',
-  FOR: 'FOR',
-  IF: 'IF',
-  NIL: 'NIL',
-  OR: 'OR',
-  PRINT: 'PRINT',
-  RETURN: 'RETURN',
-  SUPER: 'SUPER',
-  THIS: 'THIS',
-  TRUE: 'TRUE',
-  VAR: 'VAR',
-  WHILE: 'WHILE',
-
-  EOF: 'EOF'
-});
-
-class Token {
-    constructor (type, literal, line) {
-        this.type = type, 
-        this.literal = literal;
-        this.line = line;
-
-    }
-}
+const {Parser, tokenType} = require("./parser");
 
 
+
+const source = "if (12 >= 2) return true;";
 
 class Scanner {
 
     constructor (source) {
         this.source = source;
-        this.start = 0;
         this.current = 0;
+        this.start = 0;
         this.tokens = [];
-        this.line = 1;
+    }
+
+    scanToken = () => {
+        const c = this.advance(); 
+        switch (c) {
+            case  '>':
+                this.tokens.push({
+                    type: !this.match('=') ? tokenType.GREATER : tokenType.GREATER_EQUAL ,
+                    literal : null,
+                    line: 1,
+                });
+                break;
+            case this.isDigit(c):
+                while (this.isDigit(this.source.charAt(this.current))) this.advance();
+                this.tokens.push({
+                    type: tokenType.NUMBER,
+                    literal: parseInt(this.source.substring(this.start, this.AtTheEndcurrent)),
+                    line: 1, 
+                });
+                break;
+            case '(':
+                this.tokens.push({
+                    type: tokenType.LEFT_PAREN,
+                    literal : null, 
+                    line: 1,
+                });
+                break;
+            case '':
+                break;
+            case ')':
+                this.tokens.push({
+                    type: tokenType.RIGHT_PAREN,
+                    literal : null, 
+                    line: 1,
+                });
+                break;
+            case ';':
+                this.tokens.push({
+                    type: tokenType.SEMICOLON,
+                    literal : null, 
+                    line: 1,
+                })
+                break;
+        }
+
     }
 
 
-    scanTokens () {
-        while (this.notTheEnd) {
-            start = current;
-            this.scanToken();
+    scane = () => {
+        while (!this.AtTheEnd()) {
+            this.start = this.current;
+            this.scanToken();     
         }
-        this.tokens.push(new Token(EOF, '', 1));
+        return this;
+    }
+
+
+    getTokens = ()  => {
         return this.tokens;
     }
 
 
-    scanToken () {
-        const char = this.advance(); 
-        switch (char) {
-            case '(': addToken(tokenType.LEFT_PAREN); break;
-            case ')': addToken(tokenType.RIGHT_PAREN); break;
-            case '{': addToken(tokenType.LEFT_BRACE); break;
-            case '}': addToken(tokenType.RIGHT_BRACE); break;
-            case ',': addToken(tokenType.COMMA); break;
-            case '.': addToken(tokenType.DOT); break;
-            case '-': addToken(tokenType.MINUS); break;
-            case '+': addToken(tokenType.PLUS); break;
-            case ';': addToken(tokenType.SEMICOLON); break;
-            case '*': addToken(tokenType.STAR); break;
-            default:
-                console.error(line, "Unexpected character.");
-                break;
-        }
-        scanToken();
-    }
-
-    advance() {
+    advance = () => {    
         return this.source.charAt(this.current++);
     }
-
-    notTheEnd () {
-        return this.current <= this.source;        
-    }
     
-    addToken(type) {
-        return this.addToken(type, null);
+    match = (expected) => {
+        if (expected !== source.charAt(this.current)) {
+            return false;
+        }
+        this.current++;
+        return true;
     }
 
-    addToken(type, literal) {
-        const text = this.source.subString(this.start, this.current);
-        this.tokens.push(new Token(type, text, literal, this.line));
+    AtTheEnd = () => {
+        return this.current >= this.source.length;
     }
 
-}
 
-
- const rl = readline.createInterface({
-    input: fs.createReadStream('file.lox'),
-    crlfDelay: Infinity // Handles both \r\n and \n line endings
-});
-
-
-
-
-// const scanner = new Scanner();
-// const tokens = scanner.scanToken();
-
-
-/**/
-
-
-const name = "ayoubLeas";
-let current = 0;
+    isDigit = (c) => {
+        if(c >= "0" && c <= "9") {
+            return c;
+        }
+        return false;
+    }
+}   
 
 
 
-const advance = () => {    
-    return name.charAt(current++);
-}
 
 
-while (current <= name.length) {
-    console.log(advance());
-}
+
+const scanner = new Scanner(source);
+
+const tokens = scanner
+                .scane()
+                .getTokens();
+
+console.log(tokens);
+console.log('==================================');
+
+const parser = new Parser(tokens).equality();
+console.log(parser);
+
+
+
+
