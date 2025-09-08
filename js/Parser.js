@@ -1,4 +1,4 @@
-const { error } = require("console");
+
 
 const tokenType = Object.freeze({
   // Single-character tokens
@@ -58,6 +58,7 @@ class Expression {
 
 class BinaryExpression extends Expression {
     constructor (left, operator, right) {
+        super();
         this.left = left;
         this.operator = operator;
         this.right = right;
@@ -67,12 +68,14 @@ class BinaryExpression extends Expression {
 
 class groupingExpr extends Expression {
     constructor (expr) {
+        super();
         this.expr = expr;
     }
 }
  
 class UnaryExpr extends Expression {
     constructor (operator, right) {
+        super();
         this.operator = operator,
         this.right = right;
     }
@@ -80,14 +83,13 @@ class UnaryExpr extends Expression {
 
 class LiteralExpression extends Expression {
     constructor (value) {
+        super();
         if (value === null) {
             throw new Expression('value must be type string or a number');
         }
         this.value = value;
     }
 }
-
-
 
 
 
@@ -104,13 +106,29 @@ class Parser {
 
 
     equality = () => {
-        // const exp = this.comparison();
-        // while(this.match()) {
-
-        // }
-        return this.unary();
+        return this.term();
     }
 
+    term = () => {
+        let expr = this.factor();   
+        while (this.match(tokenType.MINUS, tokenType.PLUS)) {
+            const operator = this.previous().type;
+            const right = this.factor();
+            expr = new BinaryExpression(expr, operator, right);
+        }
+        return expr;
+    }
+
+
+    factor = () => {
+        let expr = this.unary();
+        while(this.match(tokenType.SLASH, tokenType.STAR)) {
+            const operator = this.previous().type;
+            const right = this.factor();
+            expr = new BinaryExpression(expr, operator, right);
+        }
+        return expr;
+    }
     
 
     unary = () => {
@@ -133,24 +151,21 @@ class Parser {
             return new LiteralExpression(this.previous().literal);
         } 
    
-
         if (this.match(tokenType.LEFT_PAREN)) {
             const exp = this.expression();
-            this.advance();
-            const c = this.tokens[this.current];
-            if (c !== tokenType.RIGHT_PAREN) {
+            const c = this.getCurrent();
+            if (c.type !== tokenType.RIGHT_PAREN) {
                 throw Error('Expected  missing \')\' after the expression');
             }
-            //this.advance();
+            this.advance();
             return new groupingExpr(exp);
         }
-       // throw Error('Expected expression');
+        throw Error('Expected expression');
     }
 
     match(...tokensType) {
         for (const token of tokensType) {
             if (this.check(token)) {
-                console.log(this.current);
                 this.advance();
                 return true;
             }
@@ -165,7 +180,9 @@ class Parser {
 
 
     previous () {
-        return this.tokens[this.current--];
+        if (this.current > 0) {
+            return this.tokens[this.current - 1];
+        }
     }
 
 
@@ -179,6 +196,13 @@ class Parser {
     check (tokenType) {
         return tokenType === this.tokens[this.current].type;   
     }
+
+
+    getCurrent = () => {
+        return this.tokens[this.current];
+    }
+
+
 }
 
 
