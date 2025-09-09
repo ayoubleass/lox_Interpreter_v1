@@ -52,13 +52,16 @@ const tokenType = Object.freeze({
 
 
 
-class Expression { 
-    constructor () {}
+class Expression {
+
+    constructor (line = 1) {
+        this.line = line;
+    }
 }
 
 class BinaryExpression extends Expression {
-    constructor (left, operator, right) {
-        super();
+    constructor (left, operator, right, line = 1) {
+        super(line);
         this.left = left;
         this.operator = operator;
         this.right = right;
@@ -67,23 +70,23 @@ class BinaryExpression extends Expression {
 }
 
 class groupingExpr extends Expression {
-    constructor (expr) {
-        super();
+    constructor (expr, line = 1) {
+        super(line);
         this.expr = expr;
     }
 }
  
 class UnaryExpr extends Expression {
-    constructor (operator, right) {
-        super();
+    constructor (operator, right, line = 1) {
+        super(line);
         this.operator = operator,
         this.right = right;
     }
 }
 
 class LiteralExpression extends Expression {
-    constructor (value) {
-        super();
+    constructor (value, line = 1) {
+        super(line);
         if (value === null) {
             throw new Expression('value must be type string or a number');
         }
@@ -100,14 +103,34 @@ class Parser {
         this.current = 0;
     }
 
+    
     expression = () => {
         return this.equality(); 
     }
 
 
     equality = () => {
-        return this.term();
+        let expr = this.comparison();
+        while(this.match(tokenType.BANG, tokenType.BANG_EQUAL)) {
+            const operator = this.previous().type;
+            const right = this.comparison();
+            expr = new BinaryExpression(expr, operator, right);
+        }
+
+        return expr;
     }
+
+    comparison  = () => {
+        let expr = this.term();
+        while (this.match(tokenType.GREATER, tokenType.GREATER_EQUAL, tokenType.LESS, tokenType.LESS_EQUAL)) {
+            const operator = this.previous().type;
+            const right = this.term();
+
+            expr = new BinaryExpression(expr, operator, right);
+        }
+        return expr;
+    }
+
 
     term = () => {
         let expr = this.factor();   
@@ -194,13 +217,14 @@ class Parser {
     }
 
     check (tokenType) {
-        return tokenType === this.tokens[this.current].type;   
+        return tokenType === this.tokens[this.current]?.type;   
     }
 
 
     getCurrent = () => {
         return this.tokens[this.current];
     }
+
 
 
 }
@@ -211,4 +235,8 @@ class Parser {
 module.exports = {
     Parser,
     tokenType,
+    LiteralExpression,
+    BinaryExpression,
+    UnaryExpr,
+    groupingExpr,
 };
