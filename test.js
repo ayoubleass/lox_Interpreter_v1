@@ -40,26 +40,52 @@ const prettyPrint = (expObjects, expr = '') => {
 
 
 const expr = prettyPrint(parsedToken);
-// let laoding = '';
 
-
-// const startTime = performance.now();
-// const endTime = startTime - (startTime * 8);
-
-// let elapedTime = 0;
-// setInterval(() => {
-//     elapedTime += 1000;
-//     if (laoding.length === 3) {
-//         laoding = '';
-//     }
-//     laoding += '.';
-
-// }, 1000);
+const expStrs = [
+                'ayeaaab',
+                'aaaab',
+                'aaaaaaaab',
+                'aaaaaaaacb',
+];
 
 
 
+let generatedStr = '';
 
-console.log(expr);
+
+const findStar = (pattern , str, index = 0, transition = 1) => {
+    if (index >= str.length) {
+        generatedStr +=  str.charAt(index);
+        return;
+    }
+    let state = pattern[transition];
+    
+    if (state === "*" && str.charAt(index) === pattern[transition - 1]) {
+        transition = transition - 1;
+        state = pattern[transition];
+    }
+    
+    if (state == "*" && str.charAt(index) !== pattern[transition - 1])  {
+        transition = transition + 1;
+        state = pattern[transition];
+    }
+
+    if (str.charAt(index) === state) {
+        generatedStr += str.charAt(index);
+    }
+    
+
+    find(pattern, str, ++index  , ++transition);
+}
+
+
+
+
+findStar('/a*b/', expStrs[1]);
+console.log(generatedStr);
+
+
+//console.log(expr);
 
 
 

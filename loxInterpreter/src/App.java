@@ -9,7 +9,11 @@ import java.util.List;
 
 public class App {
 
+    private static final Interpreter interpreter = new Interpreter();
+    
     static boolean hadError = false;
+
+    static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -28,13 +32,14 @@ public class App {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         run(new String(bytes, Charset.defaultCharset()));
         if (hadError) System.exit(65);
+        if (hadRuntimeError) System.exit(70);
     }
 
 
 
     private static void runPrompt() throws IOException {
         InputStreamReader input = new InputStreamReader(System.in);
-        BufferedReader reader = new BufferedReader(input);
+        BufferedReader    reader = new BufferedReader(input);
 
         for (;;) { 
             System.out.print("> ");
@@ -49,12 +54,12 @@ public class App {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List <Token> tokens = scanner.scanTokens();
+        System.out.println(tokens);
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
-
-        // Stop if there was a syntax error.
+        List<Stmt> statements = parser.parse(); 
         if (hadError) return;
-        System.out.println(new AstPrinter().print(expression));
+
+        interpreter.interpret(statements);
     }
 
 
@@ -77,6 +82,13 @@ public class App {
         } else {
         report(token.line, " at '" + token.lexeme + "'", message);
         }
+    }
+
+
+    static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() +
+            "\n[line " + error.token.line + "]");
+        hadRuntimeError = true;
     }
 
 
